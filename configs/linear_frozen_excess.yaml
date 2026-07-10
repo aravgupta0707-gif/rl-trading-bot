@@ -1,0 +1,6 @@
+encoder:
+  type: linear
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost

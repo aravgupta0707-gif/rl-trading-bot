@@ -1,0 +1,3 @@
+encoder:
+  type: linear
+  regime: e2e

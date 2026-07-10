@@ -1,0 +1,18 @@
+{
+  "val": {
+    "total_return": -0.024603520426342618,
+    "annualized_return": -0.012452030846309636,
+    "sharpe": 0.0036141823868588757,
+    "max_drawdown": -0.21297878148919624,
+    "avg_daily_turnover": 0.28466733930978233,
+    "n_days": 501
+  },
+  "test": {
+    "total_return": 0.2696938767891446,
+    "annualized_return": 0.10420910810767636,
+    "sharpe": 0.9275381002318289,
+    "max_drawdown": -0.1275038959201793,
+    "avg_daily_turnover": 0.3060578288574883,
+    "n_days": 607
+  }
+}

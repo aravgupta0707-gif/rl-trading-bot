@@ -1,0 +1,3 @@
+encoder:
+  type: attention
+  regime: e2e

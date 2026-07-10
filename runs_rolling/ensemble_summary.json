@@ -1,0 +1,82 @@
+{
+  "attention_frozen_excess_fold1_test2020": {
+    "total_return": 0.20842503502224918,
+    "annualized_return": 0.20842503502224918,
+    "sharpe": 1.9146734704002408,
+    "max_drawdown": -0.04678083156929125,
+    "avg_daily_turnover": 0.16368583190654004,
+    "n_days": 252
+  },
+  "attention_frozen_excess_fold2_test2021": {
+    "total_return": -0.1417984882406098,
+    "annualized_return": -0.142321169798434,
+    "sharpe": -0.740893118070061,
+    "max_drawdown": -0.21807142981427874,
+    "avg_daily_turnover": 0.10981825008186924,
+    "n_days": 251
+  },
+  "attention_frozen_excess_fold3_test2022": {
+    "total_return": 0.13655726205421903,
+    "annualized_return": 0.1383114286807463,
+    "sharpe": 1.2157985477883855,
+    "max_drawdown": -0.10485117964392943,
+    "avg_daily_turnover": 0.12518220355951162,
+    "n_days": 249
+  },
+  "attention_frozen_excess_fold4_test2023": {
+    "total_return": 0.1218537518650491,
+    "annualized_return": 0.12236778790583136,
+    "sharpe": 1.1901447545430464,
+    "max_drawdown": -0.0659596941408156,
+    "avg_daily_turnover": 0.11365844879996967,
+    "n_days": 251
+  },
+  "attention_frozen_excess_fold5_test2024": {
+    "total_return": 0.27315498943527294,
+    "annualized_return": 0.185296613808005,
+    "sharpe": 1.2804950022297004,
+    "max_drawdown": -0.13519879317022576,
+    "avg_daily_turnover": 0.10002662897547031,
+    "n_days": 358
+  },
+  "attention_frozen_fold1_test2020": {
+    "total_return": 0.20434225295825015,
+    "annualized_return": 0.20434225295825015,
+    "sharpe": 1.8550238231418574,
+    "max_drawdown": -0.046009291169016864,
+    "avg_daily_turnover": 0.15933175065687724,
+    "n_days": 252
+  },
+  "attention_frozen_fold2_test2021": {
+    "total_return": -0.14743932606632082,
+    "annualized_return": -0.1479809576131782,
+    "sharpe": -0.7831491003553926,
+    "max_drawdown": -0.2189066509426124,
+    "avg_daily_turnover": 0.13336445708792524,
+    "n_days": 251
+  },
+  "attention_frozen_fold3_test2022": {
+    "total_return": 0.10067856653173557,
+    "annualized_return": 0.1019514061204867,
+    "sharpe": 0.9487243030479947,
+    "max_drawdown": -0.10748413290875358,
+    "avg_daily_turnover": 0.11332507299850264,
+    "n_days": 249
+  },
+  "attention_frozen_fold4_test2023": {
+    "total_return": 0.12029896155837871,
+    "annualized_return": 0.12080609228209016,
+    "sharpe": 1.3259847188642295,
+    "max_drawdown": -0.0652881544109678,
+    "avg_daily_turnover": 0.09664390259886167,
+    "n_days": 251
+  },
+  "attention_frozen_fold5_test2024": {
+    "total_return": 0.26056729268552403,
+    "annualized_return": 0.17703533079116607,
+    "sharpe": 1.313635316460156,
+    "max_drawdown": -0.1290280402941809,
+    "avg_daily_turnover": 0.09286259765107205,
+    "n_days": 358
+  }
+}

@@ -1,0 +1,9 @@
+pandas
+numpy
+torch
+gymnasium
+stable-baselines3
+scikit-learn
+yfinance
+pandas-datareader
+pyyaml

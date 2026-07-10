@@ -1,0 +1,6 @@
+fold          test_yr    benchmark_sharpeattention_frozen_excess_meanattention_frozen_excess_std       attention_frozen_meanattention_frozen_std   linear_frozen_excess_meanlinear_frozen_excess_std          linear_frozen_meanlinear_frozen_std
+fold1_test20202021                  2.225                 1.805 loses       0.056                 1.829 loses       0.204                 1.784 loses       0.231                 1.796 loses       0.336
+fold2_test20212022                 -0.436                -0.760 loses       0.063                -0.764 loses       0.070                -0.737 loses       0.074                -0.700 loses       0.173
+fold3_test20222023                  1.140                 1.148 BEATS       0.173                 0.897 loses       0.127                 0.934 loses       0.093                 1.030 loses       0.029
+fold4_test20232024                  1.404                 1.209 loses       0.074                 1.295 loses       0.064                 1.152 loses       0.031                 1.192 loses       0.099
+fold5_test20242025+                 1.409                 1.231 loses       0.066                 1.217 loses       0.094                 1.118 loses       0.046                 1.053 loses       0.123

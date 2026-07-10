@@ -1,0 +1,42 @@
+{
+  "fold1_test2020": {
+    "total_return": 0.24849285319013803,
+    "annualized_return": 0.24849285319013803,
+    "sharpe": 2.2247154347396094,
+    "max_drawdown": -0.04241347740315715,
+    "avg_daily_turnover": 0.0,
+    "n_days": 252
+  },
+  "fold2_test2021": {
+    "total_return": -0.0920962708539308,
+    "annualized_return": -0.09244568117882979,
+    "sharpe": -0.4359867243862025,
+    "max_drawdown": -0.1822856377645381,
+    "avg_daily_turnover": 0.0,
+    "n_days": 251
+  },
+  "fold3_test2022": {
+    "total_return": 0.1245961200263015,
+    "annualized_return": 0.12618826452457244,
+    "sharpe": 1.1402517170434656,
+    "max_drawdown": -0.1018219787283493,
+    "avg_daily_turnover": 0.0,
+    "n_days": 249
+  },
+  "fold4_test2023": {
+    "total_return": 0.13689696845812493,
+    "annualized_return": 0.13747825976163597,
+    "sharpe": 1.4042890444771448,
+    "max_drawdown": -0.06229201398006812,
+    "avg_daily_turnover": 0.0,
+    "n_days": 251
+  },
+  "fold5_test2024": {
+    "total_return": 0.2795119711059044,
+    "annualized_return": 0.1894594927546731,
+    "sharpe": 1.4093321929749658,
+    "max_drawdown": -0.12078887917210324,
+    "avg_daily_turnover": 0.0,
+    "n_days": 358
+  }
+}

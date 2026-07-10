@@ -1,0 +1,9 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+ppo:
+  total_timesteps: 600000

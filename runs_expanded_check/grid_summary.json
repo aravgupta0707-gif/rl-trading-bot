@@ -1,0 +1,20 @@
+{
+  "attention_frozen_seed0": {
+    "val": {
+      "total_return": -0.018160039146223883,
+      "annualized_return": -0.009175990685196256,
+      "sharpe": 0.017615312573688268,
+      "max_drawdown": -0.20647065482107652,
+      "avg_daily_turnover": 0.10396795925831129,
+      "n_days": 501
+    },
+    "test": {
+      "total_return": 0.3972473819818514,
+      "annualized_return": 0.14845264295140614,
+      "sharpe": 1.2171908262553035,
+      "max_drawdown": -0.1381941007895776,
+      "avg_daily_turnover": 0.10639678443092333,
+      "n_days": 609
+    }
+  }
+}

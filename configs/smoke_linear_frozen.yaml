@@ -1,0 +1,8 @@
+encoder:
+  type: linear
+  regime: frozen
+
+ppo:
+  total_timesteps: 4000
+  n_steps: 256
+  batch_size: 64

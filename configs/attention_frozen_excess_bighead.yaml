@@ -1,0 +1,9 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+ppo:
+  net_arch: [64, 64]

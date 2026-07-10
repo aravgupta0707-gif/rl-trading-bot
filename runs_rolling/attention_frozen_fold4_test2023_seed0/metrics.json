@@ -1,0 +1,19 @@
+{
+  "val": {
+    "total_return": 0.13299162326863345,
+    "annualized_return": 0.13469732924264544,
+    "sharpe": 1.1754609846581676,
+    "max_drawdown": -0.09528555562652052,
+    "avg_daily_turnover": 0.10170895603287172,
+    "n_days": 249
+  },
+  "test": {
+    "total_return": 0.13788007433383087,
+    "annualized_return": 0.13846578875550808,
+    "sharpe": 1.380604469198208,
+    "max_drawdown": -0.05922783056197489,
+    "avg_daily_turnover": 0.09317176831344447,
+    "n_days": 251
+  },
+  "fold": "fold4_test2023"
+}
