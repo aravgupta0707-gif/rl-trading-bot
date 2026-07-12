@@ -1,0 +1,29 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+data:
+  # Built from scripts/screen_etf_universe.py's leakage-free pre-2020 screen
+  # across ~67 candidates, combined with the earlier 13-asset revealed-
+  # preference analysis (scripts/asset_promise.py):
+  #   XLK, XLI, XLF -- consistent top-3 in BOTH the model's revealed
+  #     preference and standalone pre-2020 Sharpe, from the original basket.
+  #   SMH -- a more concentrated cut of tech that outranks XLK itself in the
+  #     wider screen; empirical question whether the model prefers it.
+  #   LQD, HYG -- investment-grade / high-yield credit, the single biggest
+  #     gap identified earlier (no credit-risk signal existed anywhere in
+  #     the pipeline before this).
+  #   BIL -- T-bills. Near-zero-vol so its raw Sharpe (4.45) is a
+  #     denominator artifact, not a real "opportunity" -- included instead
+  #     as a yield-bearing safe harbor. The model's cash slot always
+  #     returns exactly 0%; BIL gives "going defensive" an actual payoff,
+  #     which may matter given the model never learned to raise cash in the
+  #     2022 bear fold (avg cash weight there was ~equal to the best fold's).
+  #   GLD, EFA -- already-validated genuine diversifiers (gold, international)
+  #     from the original basket, kept for the same cross-asset-exposure
+  #     reasoning as before.
+  etfs: [XLK, XLI, XLF, SMH, LQD, HYG, BIL, GLD, EFA]
+  cache_dir: cache_basket_universe

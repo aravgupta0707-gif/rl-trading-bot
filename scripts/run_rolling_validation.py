@@ -43,10 +43,11 @@ def main():
 
     base = load_config(args.config)
     d, f = base["data"], base["features"]
+    context_etfs = d.get("context_etfs", [])
 
-    prices = fetch_etf_prices(d["etfs"], d["start_date"], d["end_date"], d["cache_dir"])
+    prices = fetch_etf_prices(d["etfs"] + context_etfs, d["start_date"], d["end_date"], d["cache_dir"])
     macro = fetch_macro(d["macro"], d["start_date"], d["end_date"], d["cache_dir"])
-    panel = build_panel(prices, macro, d["etfs"], f)
+    panel = build_panel(prices, macro, d["etfs"], f, context_tickers=context_etfs)
     fwd = compute_forward_returns(prices, d["etfs"])
 
     cell_name = Path(args.config).stem

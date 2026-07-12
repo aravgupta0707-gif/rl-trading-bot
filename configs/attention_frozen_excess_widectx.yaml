@@ -1,0 +1,40 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+data:
+  # Tradeable universe (data.etfs) is unchanged from default.yaml -- this
+  # config only widens what the encoder OBSERVES, not what the policy can
+  # allocate to. context_etfs get technical features folded into the
+  # macro__ block (see features/panel.py::build_panel), so they reach the
+  # attention encoder's existing macro context token, not a new per-asset
+  # token, and never touch envs/portfolio_env.py's action space.
+  context_etfs: [HYG, LQD, IEF, SHY, EEM, UUP]
+  # HYG/LQD: high-yield vs investment-grade credit -- credit-risk appetite,
+  #   completely absent from the pipeline otherwise.
+  # IEF/SHY: intermediate/short treasuries -- fills out the yield curve
+  #   shape alongside TLT (long only), rather than a single macro spread.
+  # EEM: emerging-market equities -- distinct macro exposure from EFA
+  #   (developed ex-US), a different risk-appetite signal.
+  # UUP: dollar index -- tradeable-instrument technicals (momentum, vol) on
+  #   dollar strength, complementing the FRED trade-weighted series below.
+  macro:
+    DFF: fed_funds_rate
+    T10Y2Y: yield_curve_10y2y
+    T10YIE: breakeven_inflation_10y
+    VIXCLS: vix
+    UNRATE: unemployment_rate
+    BAA10Y: credit_spread_baa10y
+    T10Y3M: yield_curve_10y3m
+    ICSA: initial_jobless_claims
+    DTWEXBGS: dollar_index_broad
+    DCOILWTICO: crude_oil_wti
+    USSLIND: leading_index
+  # cache separately -- fetch_etf_prices/fetch_macro cache to one file per
+  # cache_dir regardless of which tickers/series were requested, so reusing
+  # the default cache_dir here would silently miss the new series (known
+  # gotcha, see HANDOFF.md).
+  cache_dir: cache_widectx

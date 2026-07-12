@@ -1,0 +1,15 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+data:
+  # Narrowed, diversification-preserving basket: top pre-2020 (leakage-free)
+  # performer from each exposure bucket rather than pure top-N by Sharpe --
+  # XLK/XLI/XLF/XLU are the strongest individually, EFA/GLD keep genuine
+  # cross-asset exposure (international equity, gold) rather than
+  # re-concentrating in correlated US equity sectors.
+  etfs: [XLK, XLI, XLF, XLU, EFA, GLD]
+  cache_dir: cache_basket_div

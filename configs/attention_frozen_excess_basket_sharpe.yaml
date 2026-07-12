@@ -1,0 +1,15 @@
+encoder:
+  type: attention
+  regime: frozen
+
+env:
+  reward_type: excess_return_net_cost
+
+data:
+  # Narrowed basket, pure top-6 by pre-2020 (leakage-free) buy-and-hold
+  # Sharpe -- no diversification constraint. All large-cap US equity
+  # sectors; a control against basket_div to see whether preserving
+  # cross-asset diversification actually earns its keep or whether raw
+  # trailing performance is all that matters.
+  etfs: [XLK, XLU, XLY, XLI, XLF, XLV]
+  cache_dir: cache_basket_sharpe

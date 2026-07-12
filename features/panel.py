@@ -29,7 +29,15 @@ def _etf_features(
     gain = delta.clip(lower=0).rolling(rsi_window).mean()
     loss = (-delta.clip(upper=0)).rolling(rsi_window).mean()
     rs = gain / loss.replace(0, np.nan)
-    feats[f"rsi_{rsi_window}"] = 100 - (100 / (1 + rs))
+    rsi = 100 - (100 / (1 + rs))
+    # standard RSI convention: zero average loss in the window -> RSI=100
+    # (nothing but gains), rather than the NaN that gain/0 produces. Without
+    # this, any near-zero-volatility instrument (e.g. T-bill ETFs, which can
+    # go many consecutive days with no down-days at all) poisons this single
+    # column with NaN often enough to wipe out most of the panel once
+    # build_panel()'s global dropna() runs -- silently, since every other
+    # ticker's data is untouched.
+    feats[f"rsi_{rsi_window}"] = rsi.where(loss != 0, 100.0)
 
     vol_mean = volume.rolling(vol_window).mean()
     vol_std = volume.rolling(vol_window).std()
@@ -53,7 +61,17 @@ def build_panel(
     macro: pd.DataFrame,
     tickers: list[str],
     feature_cfg: dict,
+    context_tickers: list[str] | None = None,
 ) -> pd.DataFrame:
+    """context_tickers (optional): assets observed for their technical
+    features but NOT part of the tradeable/action universe -- e.g. credit
+    ETFs, curve ETFs, broad-market ETFs, used purely to give the encoder
+    more regime context. Their columns are folded into the macro__ block
+    (same prefix macro_feature_columns() filters on), so every encoder
+    picks them up automatically -- for the attention encoder specifically,
+    that means they join the existing macro context token rather than
+    getting their own per-asset token, so the action space (envs/
+    portfolio_env.py, sized off `tickers` only) is unaffected."""
     return_windows = feature_cfg["return_windows"]
     vol_window = feature_cfg["vol_window"]
     rsi_window = feature_cfg["rsi_window"]
@@ -71,7 +89,20 @@ def build_panel(
     macro_feats = _macro_features(macro, change_window)
     macro_feats.columns = [f"macro__{c}" for c in macro_feats.columns]
 
-    full = panel.join(macro_feats, how="left")
+    frames = [panel, macro_feats]
+    if context_tickers:
+        per_ctx = {}
+        for ticker in context_tickers:
+            close = prices[(ticker, "close")]
+            volume = prices[(ticker, "volume")]
+            per_ctx[ticker] = _etf_features(close, volume, return_windows, vol_window, rsi_window)
+        ctx_feats = pd.concat(per_ctx, axis=1)
+        ctx_feats.columns = [f"macro__ctx_{ticker}__{col}" for ticker, col in ctx_feats.columns]
+        frames.append(ctx_feats)
+
+    full = frames[0]
+    for f in frames[1:]:
+        full = full.join(f, how="left")
     full = full.dropna()
     return full
 
