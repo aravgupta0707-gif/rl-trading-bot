@@ -9,7 +9,11 @@
 #   ssh <netid>@adroit.princeton.edu
 #   cd /scratch/network/$USER && git clone <repo-url> rl-trading-bot
 #   cd rl-trading-bot && bash scripts/adroit/setup_env.sh
-set -euo pipefail
+# Deliberately NOT 'set -u': this script sources third-party init scripts (the
+# cluster's module setup, and the venv's own activate), which reference unset
+# variables like PS1 in a non-interactive shell. Under 'set -u' that aborts with
+# "PS1: unbound variable" before anything is installed.
+set -eo pipefail
 cd "$(dirname "$0")/../.."
 
 WORKDIR="$(pwd)"

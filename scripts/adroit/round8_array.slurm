@@ -30,7 +30,11 @@
 # if the default queue is wrong for your account. No --gres=gpu on purpose (see
 # setup_env.sh: a GPU does not help this workload).
 
-set -uo pipefail
+# Not 'set -u': this sources .venv/bin/activate, whose own code touches unset
+# variables (PS1) in a non-interactive shell -- under 'set -u' that would abort
+# every array task before training starts. Explicit :- defaults are used below
+# wherever a Slurm variable might be missing.
+set -o pipefail
 cd "${SLURM_SUBMIT_DIR:-$(dirname "$0")/../..}"
 mkdir -p slurm_logs
 
