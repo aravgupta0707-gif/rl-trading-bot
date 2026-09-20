@@ -19,6 +19,7 @@ conclusion turned out to be wrong.
 - [Round 6–7 — rebuilding the basket, and the basket-quality trap](#round-67)
 - [Round 8 — bootstrap augmentation across all five folds](#round-8)
 - [Summary: what each round eliminated](#summary)
+- [Conclusions — what this project established](#conclusions)
 
 ---
 
@@ -54,9 +55,15 @@ of any other cell, matching the project's stated prior (see
 [DESIGN.md](DESIGN.md)) that attention should win if any neural encoder does.
 
 **Then the pivotal check:** a naive daily-rebalanced equal-weight basket scored
-Sharpe **1.28** over the same window — *beating* the winning cell's 1.15. The
-model's only clear edge was turnover. Everything since has been an attempt to
-close that gap.
+Sharpe **1.28** over the same window — *beating* the winning cell's 1.15.
+Everything since has been an attempt to close that gap.
+
+Attention's low turnover was recorded here as its "one clear edge", and that
+was only ever true *relative to the other RL cells*. Measured against the
+benchmark it is a handicap: the best cell trades ~11×/year (0.044 daily,
+≈0.55%/yr at 5 bps) while equal-weight barely trades at all — cost-matching the
+benchmark costs it just 0.007 Sharpe. There is no cost-efficiency story here,
+and later rounds should not have leaned on one.
 
 Two follow-ups, both negative:
 
@@ -417,3 +424,128 @@ outcome, and "beating it" was always going to come down to small tilts.
 | 6–7 | better asset selection | no — the basket-quality trap |
 | 6–7 | does the model de-risk in drawdowns? | **no — and that's a distinct unexplored failure** |
 | 8 | does round 4's crossing hold across all regimes? | direction yes (mean gap −0.089 → −0.016, beats benchmark on 3/5); magnitude still inside seed noise |
+
+---
+
+<a name="conclusions"></a>
+## Conclusions — what this project established
+
+**Status: concluded.** The question it set out to answer has been answered, and
+the answer is stable across eight rounds, ~240 trained models and five
+regime-diverse test windows.
+
+### The result
+
+A PPO allocator over 13 liquid ETFs, fed daily bars and macro series, **does not
+beat an equal-weight buy-and-hold of the same basket.** The best configuration
+found — attention encoder, frozen after unsupervised pretraining,
+excess-return reward, lr 1e-4, block-bootstrap-augmented training data — reaches
+a *statistical tie*: at 10 seeds it is not significantly worse than the
+benchmark on any fold, and not significantly better on any either. Every apparent
+crossing found before round 8 was a small-sample artifact.
+
+### Four things learned about the problem
+
+**1. The benchmark is the hard part, not the model.** An equal-weight basket is
+not a weak baseline; it is the rational allocation under no predictive
+information, it rebalances for almost nothing, and it captures the same
+cross-sectional risk premia the model is reaching for. Beating it requires a
+predictive edge. No amount of better optimization substitutes for one.
+
+**2. When the baseline is built from your inputs, improving the inputs doesn't
+help.** The basket-quality trap (round 6–7) is the sharpest finding here.
+Concentrating into stronger assets lifted the model *and* its benchmark in
+lockstep: `basket_div` posted the highest absolute Sharpe in the project (1.446)
+and still lost to its own benchmark (1.638) by more than the original 13-asset
+gap. This generalizes past finance — any relative-performance objective whose
+baseline is a function of the same inputs is immune to input quality.
+
+**3. A near-uniform policy is the correct response to no signal, not a training
+failure.** Measured on trained rollouts: realized weights 1.6–15.5% against a
+7.14% uniform, cash 2–6% where 36% was reachable, never within 90% of the
+action-space bound on any of 753 days. The policy had the freedom to concentrate
+and declined. Round 0 predicted this equilibrium in words — "diversify like the
+benchmark, but pay turnover getting there" — and round 8 measured it. It also
+explains why *every* lever moved Sharpe so little: they were all adjusting the
+size of a small tilt.
+
+**4. The one place a learned policy has structural room is where fixed weights
+cannot adapt.** The only statistically real fold-level effect in the entire
+project is bootstrap augmentation on the 2022 bear market (+0.146, t = 2.10) —
+the one window where the benchmark loses money. Equal weight cannot de-risk by
+construction; a policy can. That points at a different objective (drawdown
+control, volatility targeting) rather than a different lever, and it is the one
+direction the evidence actually supports.
+
+### Five things learned about doing the research
+
+These transfer further than the finance, and cost more to learn.
+
+**1. Establish measurement precision before running experiments.** Fold-level
+seed standard deviations here are 0.10–0.25 Sharpe. A 3-seed mean therefore
+carries a standard error of 0.06–0.14 — **larger than every margin this project
+ever claimed.** Eight rounds were run at a precision incapable of resolving the
+effects being tested, and two "findings" duly evaporated at 10 seeds. The seed
+variance should have been measured in round 1 and every experiment sized against
+it.
+
+**2. Single-window results mislead in a specific, predictable direction.** Round
+0's reward shaping looked like a real improvement on one test window (1.259 vs a
+1.395 benchmark, tighter across seeds). Across five regimes it won 1 of 20
+comparisons, by 0.008. A result from one window is a hypothesis, not a finding.
+
+**3. Bugs in research code produce plausible numbers, not errors.** Both bugs
+found here were silent. SB3 re-applied orthogonal init over the pretrained
+encoder, so three training regimes were secretly identical — detectable only
+because two cells agreed to the last decimal. A T-bill's RSI went `NaN` on a
+zero-loss window and the global `dropna()` deleted 81% of rows for every asset —
+detectable only because one fold reported 59 test days instead of ~360. Neither
+raised an exception; both yielded believable Sharpe ratios. **Validate
+invariants, not just outputs**: do differently-configured runs actually differ,
+does the panel contain NaN, do the row counts match across folds.
+
+**4. Leakage arrives through side doors.** The obvious paths were guarded from
+the start — train-only normalization, no future-return labels, forward returns
+used solely as reward. It nearly entered anyway through *asset screening*:
+ranking assets by Sharpe computed across the test windows, then selecting a
+basket to evaluate on those same windows. Correcting it to pre-2020-only data
+flipped `XLE` from 4th-best to last. Feature hygiene does not protect you if the
+experiment's *design* peeks.
+
+**5. Derived artifacts must match what they judge.** Two near-misses, both from
+comparing against a baseline computed on different terms. Fold 5's test window
+tracks the data vintage, so a six-day-newer cache moved its benchmark by 0.066 —
+larger than most effects under study. And a reporting script silently scored
+6-asset baskets against the 13-asset benchmark, manufacturing three crossings
+that did not exist. Benchmarks need the same universe, the same window and the
+same vintage as the models they score, and that needs to be enforced in code
+rather than remembered.
+
+### What would justify resuming
+
+Not another optimizer lever. The remaining untested knobs (`ent_coef`, reward
+scale, `turnover_penalty`) would make the policy tilt harder; with no signal to
+tilt on, the likeliest outcome is unchanged mean return at higher variance.
+
+Three things would genuinely change the odds:
+
+- **A different objective.** Drawdown-constrained or volatility-targeted
+  allocation, judged on Calmar or max-drawdown rather than Sharpe-vs-equal-weight.
+  Competes where a policy has structural advantage instead of requiring it to
+  out-predict the market. Reuses nearly all of this code.
+- **Different information.** Point-in-time macro vintages, intraday bars,
+  options-implied volatility, higher-frequency credit, cross-sectional
+  fundamentals. Daily adjusted closes on the most liquid ETFs in existence, with
+  features standard since the 1980s, is the most heavily mined dataset in
+  finance; the null result is what that prior predicts.
+- **A less efficient market.** Different asset class entirely, at the cost of
+  more noise and more regime risk.
+
+### What is worth keeping regardless
+
+A pipeline that is honest by construction (no future-return supervision,
+train-only normalization, walk-forward validation, per-basket benchmarks), a
+harness that runs 100 experiments as a Slurm array, tooling that reports
+t statistics instead of impressions, and a written record of what was tried and
+why it didn't work. The negative result is legible, which is the part that makes
+it useful.

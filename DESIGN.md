@@ -129,7 +129,9 @@ would need point-in-time vintages before any live use.
 
 ## Why there is no broker integration
 
-Nothing here has robustly beaten equal-weight buy-and-hold across
-regime-diverse folds. Wiring a strategy that loses to its benchmark into a
-broker would convert a research negative into a financial one. It stays unbuilt
-until something clears the bar.
+Nothing here beat equal-weight buy-and-hold across regime-diverse folds; the
+best configuration reached a statistical tie. Wiring that into a broker would
+convert a research negative into a financial one, so it stayed unbuilt — and
+with the project concluded, that remains the right call. See
+[Conclusions](RESULTS.md#conclusions) for what the evidence supports and what
+would have to change first.

@@ -7,10 +7,13 @@ front of the policy. Backtest-first, walk-forward validated across market
 regimes, and benchmarked honestly against the thing it has to beat — a naive
 equal-weight buy-and-hold of the same basket.
 
-**This is a research log, not a trading system.** There is no broker or
-paper-trading integration, deliberately: no configuration has robustly beaten
-its benchmark yet, and connecting a strategy that loses to buy-and-hold would
-just be a faster way to lose money.
+**This is a research log, not a trading system**, and it is **concluded**. There
+is no broker or paper-trading integration, deliberately: nothing here beat
+buy-and-hold, and wiring up a strategy that ties its benchmark at best would
+only convert a research negative into a financial one. What the project produced
+instead is a clear answer, an audited pipeline, and a set of transferable lessons
+about measuring this kind of question — see
+[Conclusions](RESULTS.md#conclusions).
 
 ---
 
@@ -155,7 +158,7 @@ itself. The model has to do something equal-weight structurally can't.
 
 ---
 
-## What's been ruled out, and what's still open
+## What's been ruled out
 
 **Ruled out as the bottleneck** (each tested directly, not argued):
 
@@ -170,47 +173,75 @@ itself. The model has to do something equal-weight structurally can't.
   for all three encoders).
 - *Asset selection by trailing quality.* See the basket-quality trap above.
 
-**Open leads**, in the order they seem worth pursuing:
+## What we learned
 
-1. **Reward scale and exploration.** Round 8's addendum shows the policy barely
-   differentiates, and round 3 showed entropy and policy std nearly static. The
-   excess-return reward is ~1e-4 per day and `ent_coef` is 0, so there may be no
-   gradient large enough to move the Gaussian's mean off its initialization. A
-   sweep over `ent_coef`, a reward scale factor and `vf_coef` tests whether
-   eight rounds of flat results are an optimization artifact. Neither
-   `ent_coef` nor a reward scale has a config key yet.
-2. **The policy barely differentiates, and not because it can't.** The action
-   space does impose a cap — `Box(low=-1, high=1)` softmaxed over 14 slots
-   confines every weight to **[1.0%, 36.2%]** — but measured against trained
-   rollouts (`scripts/check_action_space.py`) that cap is **not binding**:
-   realized weights stay within **1.6%–15.5%**, cash sits at 2–6% where 36% is
-   available, and no day comes within 90% of the cap. The learned portfolio is a
-   *mildly tilted equal-weight basket by choice*, which explains the tight
-   benchmark tracking and why no lever moves Sharpe much. The question worth
-   attacking is why the policy stays near-uniform — candidates: the
-   excess-return reward is ~1e-4 per day, `ent_coef=0` leaves nothing pushing
-   exploration, and advantage scale may simply be too small to move the
-   Gaussian's mean off its initialization. Widening the action bounds is *not*
-   the fix; the agent doesn't use the range it already has.
-3. **The model never goes defensive — and this is now confirmed as a learning
-   failure, not a specification limit.** Average cash weight in the 2022 bear
-   fold (0.027) is no higher than in the best fold (0.042). Since the agent
-   *could* hold up to 36% cash and holds 2–6%, the capacity to de-risk exists
-   and goes unused, which makes this a reward/exploration problem rather than a
-   plumbing one. `basket_universe`'s `BIL` sleeve was a first probe at giving
-   defensiveness an actual payoff.
-4. **Correlation-optimal vs. economically-sensible baskets.** Pre-2020
-   correlations show `LQD` (investment-grade credit) is ~uncorrelated with
-   equities (0.05) while `HYG` (high-yield) is not (0.66) — junk bonds carry
-   equity risk, investment grade doesn't. Pure greedy min-correlation
-   selection picks mathematically diverse but odd baskets
-   (Brazil / Hong Kong / ARKK). A properly constrained selection — diversify
-   across meaningful buckets, best Sharpe within each — is still unbuilt.
-5. **Combining levers.** Bootstrap + wide context + a diversified basket have
-   only ever been tested in isolation.
+Four things about the problem:
 
-Deliberately untouched until something clears the bar: point-in-time macro
-vintages, and broker integration.
+1. **The benchmark is the hard part, not the model.** Equal weight is not a weak
+   baseline — it is the rational allocation under no predictive information, it
+   trades almost nothing, and it earns the same risk premia the model reaches
+   for. Beating it needs an edge; no amount of optimization substitutes for one.
+2. **When the baseline is built from your inputs, better inputs don't help.**
+   The basket-quality trap: concentrating into stronger assets lifted the model
+   *and* its benchmark together. `basket_div` posted the project's best absolute
+   Sharpe (1.446) and lost to its own benchmark (1.638) by more than the
+   original gap. This generalizes past finance — any relative objective whose
+   baseline is a function of the same inputs is immune to input quality.
+3. **A near-uniform policy is the right answer to no signal, not a broken one.**
+   Trained rollouts hold weights in 1.6–15.5% around a 7.14% uniform, and 2–6%
+   cash where 36% was reachable — never within 90% of the action-space bound on
+   any of 753 days. The agent could concentrate and chose not to. That also
+   explains why every lever moved Sharpe so little: each was resizing a small
+   tilt.
+4. **The room a learned policy has is where fixed weights can't adapt.** The only
+   statistically real fold effect in the project is augmentation on the 2022 bear
+   market (+0.146, t = 2.10) — the one window where the benchmark loses money.
+   Equal weight cannot de-risk; a policy can.
+
+And five about doing the research, which transfer further:
+
+5. **Measure your precision before running experiments.** Seed sd here is
+   0.10–0.25 Sharpe, so a 3-seed standard error (0.06–0.14) is larger than every
+   margin this project ever claimed. Eight rounds ran at a precision that could
+   not resolve what they tested; two "findings" evaporated at 10 seeds.
+6. **One test window is a hypothesis, not a finding.** Reward shaping looked like
+   a real gain on a single window and won 1 of 20 comparisons across regimes.
+7. **Research bugs return plausible numbers, not errors.** Both found here were
+   silent: SB3 overwriting the pretrained encoder (caught because two cells
+   agreed to the last decimal) and one `NaN` RSI column deleting 81% of the panel
+   (caught because a fold reported 59 days instead of 360). Validate invariants,
+   not just outputs.
+8. **Leakage comes through side doors.** Features were clean from day one; the
+   near-miss was in *asset screening* — ranking assets on test-window data, then
+   evaluating the chosen basket on those same windows.
+9. **Derived artifacts must match what they judge.** A six-day-newer data cache
+   moved a benchmark by 0.066 (larger than most effects here), and a reporting
+   script silently scored 6-asset baskets against the 13-asset bar, inventing
+   three crossings. Enforce it in code, don't remember it.
+
+Full reasoning and numbers: [Conclusions](RESULTS.md#conclusions).
+
+## What would justify resuming
+
+**Not another optimizer lever.** The untested knobs (`ent_coef`, reward scale,
+`turnover_penalty`) would make the policy tilt harder; with no signal to tilt on,
+the likeliest outcome is an unchanged mean at higher variance. Three things would
+genuinely change the odds:
+
+1. **A different objective.** Drawdown-constrained or volatility-targeted
+   allocation, scored on Calmar or max drawdown rather than Sharpe-vs-equal-weight.
+   This competes where a policy has structural advantage rather than requiring it
+   to out-predict the market, and it is where finding 4 above points. Reuses
+   nearly all of this code: a new `reward_type`, new metrics.
+2. **Different information.** Point-in-time macro vintages, intraday bars,
+   options-implied volatility, higher-frequency credit, cross-sectional
+   fundamentals. Daily adjusted closes on the most liquid ETFs in existence,
+   with features standard since the 1980s, is the most heavily mined dataset in
+   finance — the null result is what that prior predicts.
+3. **A less efficient market.** A different asset class, at the cost of more
+   noise and more regime risk.
+
+Broker integration stays unbuilt, which was the right call throughout.
 
 ---
 
