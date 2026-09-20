@@ -4,3 +4,5 @@ cache/
 *.log
 *.out
 smoke_test_ablation/
+.venv/
+slurm_logs/
