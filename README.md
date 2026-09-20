@@ -155,21 +155,26 @@ itself. The model has to do something equal-weight structurally can't.
    the effect is real but not sized: fold 4 read +0.188 at 2 seeds and +0.120 at
    3, against a spread of 0.157. 10 seeds × 5 folds × 2 cells settles it, and as
    a Slurm array that is one submission — [`scripts/adroit/`](scripts/adroit/).
-2. **The action space may be the real ceiling.** `Box(low=-1, high=1)` softmaxed
-   over 14 slots confines every weight to **[1.0%, 36.2%]**, so the most
-   defensive portfolio the agent can express is 36% cash / 64% equities, and the
-   most concentrated is 36% in one asset. That plausibly explains the
-   "never goes defensive" finding, the tight benchmark tracking, and why seven
-   rounds of levers moved Sharpe so little — whatever the encoder finds, the
-   action space caps how much of it reaches the portfolio. Not yet tested
-   against realized weights from a trained rollout; `scripts/diagnostics.py`
-   dumps the trajectories needed to confirm or kill it.
-3. **The model never goes defensive.** Average cash weight in the 2022 bear
-   fold (0.027) is no higher than in the best fold (0.042) — it is *lower*
-   than several good folds. Whether this is a learning failure or simply the
-   action-space cap above is the open question, and it matters: one is a
-   training problem, the other a specification bug. `basket_universe`'s `BIL`
-   sleeve was a first probe at giving defensiveness an actual payoff.
+2. **The policy barely differentiates, and not because it can't.** The action
+   space does impose a cap — `Box(low=-1, high=1)` softmaxed over 14 slots
+   confines every weight to **[1.0%, 36.2%]** — but measured against trained
+   rollouts (`scripts/check_action_space.py`) that cap is **not binding**:
+   realized weights stay within **1.6%–15.5%**, cash sits at 2–6% where 36% is
+   available, and no day comes within 90% of the cap. The learned portfolio is a
+   *mildly tilted equal-weight basket by choice*, which explains the tight
+   benchmark tracking and why no lever moves Sharpe much. The question worth
+   attacking is why the policy stays near-uniform — candidates: the
+   excess-return reward is ~1e-4 per day, `ent_coef=0` leaves nothing pushing
+   exploration, and advantage scale may simply be too small to move the
+   Gaussian's mean off its initialization. Widening the action bounds is *not*
+   the fix; the agent doesn't use the range it already has.
+3. **The model never goes defensive — and this is now confirmed as a learning
+   failure, not a specification limit.** Average cash weight in the 2022 bear
+   fold (0.027) is no higher than in the best fold (0.042). Since the agent
+   *could* hold up to 36% cash and holds 2–6%, the capacity to de-risk exists
+   and goes unused, which makes this a reward/exploration problem rather than a
+   plumbing one. `basket_universe`'s `BIL` sleeve was a first probe at giving
+   defensiveness an actual payoff.
 4. **Correlation-optimal vs. economically-sensible baskets.** Pre-2020
    correlations show `LQD` (investment-grade credit) is ~uncorrelated with
    equities (0.05) while `HYG` (high-yield) is not (0.66) — junk bonds carry

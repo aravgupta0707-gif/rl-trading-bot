@@ -327,6 +327,48 @@ are single-vintage; the six superseded fold-5 runs are preserved under
 `runs_archive/vintage_358days/` with the full explanation. Folds 1–4 have fixed
 `test_end` dates and are vintage-independent.
 
+### Round 8 addendum — the policy stays near equal weight by choice
+
+A structural hypothesis worth recording because it was tested and **refuted**.
+
+The env's action space is `Box(low=-1, high=1)`, and SB3 clips actions to those
+bounds before `step()`. Softmaxing 14 logits confined to [−1, 1] therefore cannot
+reach an arbitrary simplex point — the reachable per-slot range is
+**[1.03%, 36.24%]**, not [0%, 100%]. That looked like a candidate ceiling on
+everything: it would cap de-risking at 36% cash and cap conviction at 36% in one
+asset, which would explain the "never goes defensive" finding, the tight
+benchmark tracking, and the general unresponsiveness to levers.
+
+Measured against trained rollouts (`scripts/check_action_space.py`, 3 runs
+across 2 folds, 251 days each), **the cap is not binding**:
+
+| run | realized weight range | cash mean / max | most concentrated asset | days within 90% of cap |
+|---|---|---|---|---|
+| baseline, bear fold | 1.6% – 14.4% | 4.7% / 6.2% | 14.4% | 0.00% |
+| bootstrap, bear fold | 1.6% – 12.2% | 2.0% / 2.7% | 12.2% | 0.00% |
+| baseline, 2024 fold | 2.1% – 15.5% | 2.4% / 2.7% | 15.5% | 0.00% |
+
+Every weight sits deep inside the feasible set — never above 16% where 36% is
+allowed, cash at 2–6% where 36% is available, and not a single day in 753 comes
+within 90% of the bound. Equal weight is 7.14%, so **the learned policy is a
+mildly tilted equal-weight basket, by choice rather than by constraint.**
+
+Two consequences:
+
+1. **Widening the action bounds is not a lever.** The agent does not use the
+   range it already has.
+2. **"Never goes defensive" is a learning failure, not a plumbing one.** The
+   capacity to hold 36% cash exists and goes unused, which points at the reward
+   and exploration rather than the interface. Candidates: the excess-return
+   reward is on the order of 1e-4 per day, `ent_coef=0` leaves nothing pushing
+   exploration, and the advantage scale may be too small to move the Gaussian
+   policy's mean off its initialization — consistent with round 3's observation
+   that entropy and policy std barely budge without a 3× step budget.
+
+This also reframes every earlier round: if the policy is structurally a
+near-equal-weight basket, then tracking the benchmark closely is the *expected*
+outcome, and "beating it" was always going to come down to small tilts.
+
 <a name="summary"></a>
 ## Summary: what each round eliminated
 
