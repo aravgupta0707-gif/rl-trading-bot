@@ -27,7 +27,9 @@ git checkout claude/jolly-ramanujan-g9s56x
 # 3. one-time setup: venv + deps + data cache. Login node, needs network.
 bash scripts/adroit/setup_env.sh
 
-# 4. submit
+# 4. submit. slurm_logs/ must exist BEFORE this (setup_env.sh creates it):
+#    Slurm opens the --output file before the job script's own mkdir can run.
+mkdir -p slurm_logs
 sbatch scripts/adroit/round8_array.slurm
 squeue -u $USER
 

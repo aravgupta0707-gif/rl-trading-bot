@@ -52,6 +52,11 @@ print('deps OK, torch', torch.__version__, '| cuda', torch.cuda.is_available())"
 # than hitting Yahoo Finance, which is often blocked on clusters.
 python scripts/rebuild_default_cache.py
 
+# Slurm opens the --output file before the job script runs, so this directory
+# has to exist at SUBMIT time -- the mkdir inside round8_array.slurm is too late
+# to save a job whose output path is missing.
+mkdir -p slurm_logs
+
 echo
 echo "=== setup complete. Submit training with:"
 echo "    sbatch scripts/adroit/round8_array.slurm"
