@@ -94,9 +94,20 @@ folds by their real test year.
 
 Fold 5's test window runs to the end of available data, so **its length depends
 on the data vintage** — the original runs had 358 test days, later caches give
-364. Folds 1–4 have fixed `test_end` dates and are vintage-independent. If
-fold 5 numbers are being compared across cache vintages, recompute the
-benchmark on the same vintage first.
+364. Folds 1–4 have fixed `test_end` dates and are vintage-independent.
+
+This is not a rounding concern. Five extra trading days move fold 5's
+equal-weight benchmark from **1.409 to 1.344** — a 0.066 shift, larger than most
+model-vs-benchmark margins this project measures (round 4's crossing was 0.013).
+Two rules follow:
+
+- **Recompute the benchmark on the same vintage as the models it judges**
+  (`scripts/rolling_benchmark.py --out <vintage-specific file>`).
+- **Watch out for the skip-existing interaction.** Runners skip any cell with a
+  `metrics.json`, so adding seeds to an old fold 5 keeps the old seeds on the old
+  window and puts new seeds on the new one — one fold, two test windows, no
+  warning. Move the stale runs aside to force a clean re-run; see
+  `runs_archive/vintage_358days/` for a worked example.
 
 ---
 

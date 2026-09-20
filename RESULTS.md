@@ -17,6 +17,7 @@ conclusion turned out to be wrong.
 - [Round 4 — block-bootstrap augmentation](#round-4)
 - [Round 5 — wider observed context](#round-5)
 - [Round 6–7 — rebuilding the basket, and the basket-quality trap](#round-67)
+- [Round 8 — bootstrap augmentation across all five folds](#round-8)
 - [Summary: what each round eliminated](#summary)
 
 ---
@@ -278,6 +279,54 @@ Fixed; details and the detection method are in
 Any pre-fix `basket_universe` number (the one with `n_days=59`) is invalid; the
 table above is the post-fix rerun.
 
+<a name="round-8"></a>
+## Round 8 — bootstrap augmentation across all five folds
+
+Round 4 claimed the project's only benchmark crossing, but on 2 hand-picked
+folds with a margin (0.013) an order of magnitude smaller than its seed spread
+(0.173). This round runs the same cell **with and without augmentation across
+all 5 folds**, 3 seeds each, so the comparison is regime-wide.
+
+Both cells are `attention_frozen_excess_lowlr`; benchmark is
+`runs_rolling/equal_weight_benchmark_round8.json`, recomputed on the same data
+vintage as the models (see the vintage note below).
+
+| fold (test year) | baseline `_lowlr` | + bootstrap | benchmark | baseline gap | bootstrap gap |
+|---|---|---|---|---|---|
+| 1 (2021) | 2.001 ± 0.082 | 2.134 ± 0.169 | 2.225 | −0.223 | −0.091 |
+| 2 (2022 bear) | −0.564 ± 0.152 | **−0.423** ± 0.173 | −0.436 | −0.128 | **+0.013** |
+| 3 (2023) | **1.181** ± 0.084 | 1.151 ± 0.079 | 1.140 | **+0.041** | +0.011 |
+| 4 (2024) | 1.326 ± 0.061 | **1.525** ± 0.157 | 1.404 | −0.078 | **+0.120** |
+| 5 (2025+) | 1.289 ± 0.066 | 1.211 ± 0.069 | 1.344 | −0.055 | −0.132 |
+| **mean gap** | | | | **−0.089** | **−0.016** |
+
+**What holds up.** Augmentation is not a fold-2 artifact. It cuts the mean gap
+to benchmark by a factor of five (−0.089 → −0.016), beats the benchmark on 3 of
+5 folds where the baseline manages 1, and beats the baseline itself on 3 of 5
+(folds 1, 2, 4). Round 4's direction survived contact with three new regimes —
+the first lever in this project that has.
+
+**What doesn't.** No fold's margin exceeds its own seed spread. Fold 4 looked
+like the exception at 2 seeds (+0.188 against sd 0.149) but the third seed
+pulled it to +0.120 against sd 0.157, back inside the noise. Augmentation also
+*widens* seed variance wherever it helps (fold 1: 0.082 → 0.169; fold 4: 0.061 →
+0.157), which is what you would expect from a method that adds training variety:
+more upside, less stability. And it loses fold 5, the most decision-relevant
+window, by more than the baseline does.
+
+**Verdict: promising and unconfirmed, for the same reason as round 4 — too few
+seeds.** 3 seeds cannot separate a 0.12 effect from a 0.16 spread. The next
+step is not a new lever but 10 seeds on the same design, which is what
+`scripts/adroit/` exists for.
+
+**Vintage note.** Fold 5 is the only fold whose test window runs to the end of
+available data, so its length tracks the data vintage: 358 days on the cache the
+round-4 runs used, 363 on the current one, which moves the equal-weight
+benchmark by 0.066 — larger than most margins here. All round-8 numbers above
+are single-vintage; the six superseded fold-5 runs are preserved under
+`runs_archive/vintage_358days/` with the full explanation. Folds 1–4 have fixed
+`test_end` dates and are vintage-independent.
+
 <a name="summary"></a>
 ## Summary: what each round eliminated
 
@@ -294,3 +343,4 @@ table above is the post-fix rerun.
 | 5 | too little observed information | real, modest lift on both folds |
 | 6–7 | better asset selection | no — the basket-quality trap |
 | 6–7 | does the model de-risk in drawdowns? | **no — and that's a distinct unexplored failure** |
+| 8 | does round 4's crossing hold across all regimes? | direction yes (mean gap −0.089 → −0.016, beats benchmark on 3/5); magnitude still inside seed noise |

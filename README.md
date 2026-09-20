@@ -16,7 +16,7 @@ just be a faster way to lose money.
 
 ## Headline finding
 
-Across **7 rounds of experiments and ~145 trained models**, covering reward
+Across **8 rounds of experiments and ~175 trained models**, covering reward
 shaping, encoder architecture, PPO convergence, data augmentation, wider
 macro context, and four different tradeable baskets:
 
@@ -25,11 +25,13 @@ macro context, and four different tradeable baskets:
 > architecture sweep, exactly one came out ahead — by 0.008 Sharpe, well
 > inside one seed's noise.
 
-The single genuinely promising lead is **block-bootstrap data augmentation**,
-which crossed the benchmark on the hardest fold (the 2022 bear market:
-**−0.423 vs. −0.436**). That is a 0.013 margin on a 3-seed spread of 0.17, so
-it is suggestive, not established — confirming or killing it is the current
-work.
+The one lever that has survived scrutiny is **block-bootstrap data
+augmentation**. Tested across all 5 folds in round 8, it cuts the mean gap to
+benchmark from −0.089 to **−0.016**, and beats the benchmark on 3 of 5 folds
+where the un-augmented baseline manages 1. But no individual fold's margin
+exceeds its own seed spread, and augmentation *widens* that spread wherever it
+helps — so the honest verdict is a real effect of unproven size. Settling it
+needs seeds, not another lever; see [`scripts/adroit/`](scripts/adroit/).
 
 Why this negative result is worth reading: the interesting part isn't that the
 agent loses, it's *why* every obvious fix fails to help. See
@@ -98,7 +100,22 @@ seed variance, so attention stays the default.
 | `_longtrain` (200k→600k steps) | −0.582 | 1.308 | converges, doesn't help |
 | `_lowlr` (lr 3e-4→1e-4) | −0.564 | 1.351 | best single lever |
 | `_widectx` (+6 FRED series, +6 observed ETFs) | −0.652 | 1.296 | real, modest lift |
-| `_lowlr` + **block bootstrap** | **−0.423** ✅ | 1.319 | only crossing found |
+| `_lowlr` + **block bootstrap** | **−0.423** ✅ | 1.319 | extended to all folds in round 8 |
+
+### Round 8: bootstrap augmentation across all 5 folds (3 seeds, single vintage)
+
+| fold (test year) | baseline `_lowlr` | + bootstrap | benchmark | baseline gap | bootstrap gap |
+|---|---|---|---|---|---|
+| 1 (2021) | 2.001 | 2.134 | 2.225 | −0.223 | −0.091 |
+| 2 (2022 bear) | −0.564 | **−0.423** | −0.436 | −0.128 | **+0.013** ✅ |
+| 3 (2023) | **1.181** | 1.151 | 1.140 | **+0.041** ✅ | +0.011 ✅ |
+| 4 (2024) | 1.326 | **1.525** | 1.404 | −0.078 | **+0.120** ✅ |
+| 5 (2025+) | 1.289 | 1.211 | 1.344 | −0.055 | −0.132 |
+| **mean gap** | | | | **−0.089** | **−0.016** |
+
+Fold 5's benchmark is 1.344 rather than 1.409 here because its test window
+tracks the data vintage — see the vintage note in
+[RESULTS.md](RESULTS.md#round-8).
 
 ### Basket studies — each against *its own* equal-weight benchmark
 
@@ -134,23 +151,33 @@ itself. The model has to do something equal-weight structurally can't.
 
 **Open leads**, in the order they seem worth pursuing:
 
-1. **Block-bootstrap augmentation** — the one crossing. Needs all 5 folds and
-   more seeds. *In progress.*
-2. **The model never goes defensive.** Average cash weight in the 2022 bear
+1. **More seeds on the round-8 design.** All 5 folds are now done at 3 seeds and
+   the effect is real but not sized: fold 4 read +0.188 at 2 seeds and +0.120 at
+   3, against a spread of 0.157. 10 seeds × 5 folds × 2 cells settles it, and as
+   a Slurm array that is one submission — [`scripts/adroit/`](scripts/adroit/).
+2. **The action space may be the real ceiling.** `Box(low=-1, high=1)` softmaxed
+   over 14 slots confines every weight to **[1.0%, 36.2%]**, so the most
+   defensive portfolio the agent can express is 36% cash / 64% equities, and the
+   most concentrated is 36% in one asset. That plausibly explains the
+   "never goes defensive" finding, the tight benchmark tracking, and why seven
+   rounds of levers moved Sharpe so little — whatever the encoder finds, the
+   action space caps how much of it reaches the portfolio. Not yet tested
+   against realized weights from a trained rollout; `scripts/diagnostics.py`
+   dumps the trajectories needed to confirm or kill it.
+3. **The model never goes defensive.** Average cash weight in the 2022 bear
    fold (0.027) is no higher than in the best fold (0.042) — it is *lower*
-   than several good folds. The agent never learned to de-risk, which is a
-   distinct failure from "found no rotation signal" and would explain why it
-   loses worst precisely when losing hurts most. Largely unaddressed;
-   `basket_universe`'s `BIL` sleeve was a first probe at giving defensiveness
-   an actual payoff.
-3. **Correlation-optimal vs. economically-sensible baskets.** Pre-2020
+   than several good folds. Whether this is a learning failure or simply the
+   action-space cap above is the open question, and it matters: one is a
+   training problem, the other a specification bug. `basket_universe`'s `BIL`
+   sleeve was a first probe at giving defensiveness an actual payoff.
+4. **Correlation-optimal vs. economically-sensible baskets.** Pre-2020
    correlations show `LQD` (investment-grade credit) is ~uncorrelated with
    equities (0.05) while `HYG` (high-yield) is not (0.66) — junk bonds carry
    equity risk, investment grade doesn't. Pure greedy min-correlation
    selection picks mathematically diverse but odd baskets
    (Brazil / Hong Kong / ARKK). A properly constrained selection — diversify
    across meaningful buckets, best Sharpe within each — is still unbuilt.
-4. **Combining levers.** Bootstrap + wide context + a diversified basket have
+5. **Combining levers.** Bootstrap + wide context + a diversified basket have
    only ever been tested in isolation.
 
 Deliberately untouched until something clears the bar: point-in-time macro
