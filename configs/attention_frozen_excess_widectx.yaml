@@ -36,5 +36,5 @@ data:
   # cache separately -- fetch_etf_prices/fetch_macro cache to one file per
   # cache_dir regardless of which tickers/series were requested, so reusing
   # the default cache_dir here would silently miss the new series (known
-  # gotcha, see HANDOFF.md).
+  # gotcha, see NOTES.md).
   cache_dir: cache_widectx
