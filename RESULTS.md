@@ -280,52 +280,83 @@ Any pre-fix `basket_universe` number (the one with `n_days=59`) is invalid; the
 table above is the post-fix rerun.
 
 <a name="round-8"></a>
-## Round 8 — bootstrap augmentation across all five folds
+## Round 8 — bootstrap augmentation, 10 seeds across all five folds
 
-Round 4 claimed the project's only benchmark crossing, but on 2 hand-picked
-folds with a margin (0.013) an order of magnitude smaller than its seed spread
-(0.173). This round runs the same cell **with and without augmentation across
-all 5 folds**, 3 seeds each, so the comparison is regime-wide.
+Round 4 claimed the project's only benchmark crossing, from 2 hand-picked folds
+and 3 seeds, with a margin (0.013) an order of magnitude smaller than its seed
+spread (0.173). Round 8 ran the same cell with and without augmentation across
+**all 5 folds at 10 seeds** — 100 runs, as a Slurm job array on Princeton's
+Adroit cluster (see `scripts/adroit/`).
 
-Both cells are `attention_frozen_excess_lowlr`; benchmark is
-`runs_rolling/equal_weight_benchmark_round8.json`, recomputed on the same data
-vintage as the models (see the vintage note below).
+Both cells are `attention_frozen_excess_lowlr`; the benchmark is
+`equal_weight_benchmark_round8.json`, recomputed on the same data vintage as the
+models. `t` is Welch's, from `scripts/compare_cells.py`; |t| > 2 is the bar for
+calling a difference real.
 
-| fold (test year) | baseline `_lowlr` | + bootstrap | benchmark | baseline gap | bootstrap gap |
+| fold (test year) | baseline (10 seeds) | + bootstrap (10 seeds) | difference | t | verdict |
 |---|---|---|---|---|---|
-| 1 (2021) | 2.001 ± 0.082 | 2.134 ± 0.169 | 2.225 | −0.223 | −0.091 |
-| 2 (2022 bear) | −0.564 ± 0.152 | **−0.423** ± 0.173 | −0.436 | −0.128 | **+0.013** |
-| 3 (2023) | **1.181** ± 0.084 | 1.151 ± 0.079 | 1.140 | **+0.041** | +0.011 |
-| 4 (2024) | 1.326 ± 0.061 | **1.525** ± 0.157 | 1.404 | −0.078 | **+0.120** |
-| 5 (2025+) | 1.289 ± 0.066 | 1.211 ± 0.069 | 1.344 | −0.055 | −0.132 |
-| **mean gap** | | | | **−0.089** | **−0.016** |
+| 1 (2021) | 2.057 ± 0.126 | 2.116 ± 0.217 | +0.059 | 0.74 | noise |
+| 2 (2022 bear) | −0.656 ± 0.166 | **−0.510** ± 0.144 | **+0.146** | **2.10** | **bootstrap better** |
+| 3 (2023) | 1.198 ± 0.109 | 1.146 ± 0.158 | −0.053 | −0.87 | noise |
+| 4 (2024) | 1.410 ± 0.147 | 1.418 ± 0.161 | +0.008 | 0.12 | noise |
+| 5 (2025+) | 1.250 ± 0.102 | 1.293 ± 0.140 | +0.043 | 0.79 | noise |
 
-**What holds up.** Augmentation is not a fold-2 artifact. It cuts the mean gap
-to benchmark by a factor of five (−0.089 → −0.016), beats the benchmark on 3 of
-5 folds where the baseline manages 1, and beats the baseline itself on 3 of 5
-(folds 1, 2, 4). Round 4's direction survived contact with three new regimes —
-the first lever in this project that has.
+### Round 4's crossing does not survive
 
-**What doesn't.** No fold's margin exceeds its own seed spread. Fold 4 looked
-like the exception at 2 seeds (+0.188 against sd 0.149) but the third seed
-pulled it to +0.120 against sd 0.157, back inside the noise. Augmentation also
-*widens* seed variance wherever it helps (fold 1: 0.082 → 0.169; fold 4: 0.061 →
-0.157), which is what you would expect from a method that adds training variety:
-more upside, less stability. And it loses fold 5, the most decision-relevant
-window, by more than the baseline does.
+| fold | 3 seeds | 10 seeds | benchmark |
+|---|---|---|---|
+| 2 (2022 bear) | −0.423 (**beat** −0.436) | **−0.510** (loses by 0.074) | −0.436 |
+| 4 (2024) | 1.525 at 3 seeds, 1.592 at 2 | **1.418** (+0.014) | 1.404 |
 
-**Verdict: promising and unconfirmed, for the same reason as round 4 — too few
-seeds.** 3 seeds cannot separate a 0.12 effect from a 0.16 spread. The next
-step is not a new lever but 10 seeds on the same design, which is what
-`scripts/adroit/` exists for.
+Seeds 0–2 on the bear fold returned −0.26, −0.41, −0.60; the remaining seven
+returned −0.49, −0.54, −0.49, −0.75, −0.59, −0.62, −0.34. The first three
+happened to include the two best runs of ten. Fold 4's apparent +0.188 margin
+at two seeds decayed to +0.120 at three and +0.014 at ten. **Every "crossing"
+this project found before round 8 was a small-sample artifact.**
 
-**Vintage note.** Fold 5 is the only fold whose test window runs to the end of
-available data, so its length tracks the data vintage: 358 days on the cache the
-round-4 runs used, 363 on the current one, which moves the equal-weight
-benchmark by 0.066 — larger than most margins here. All round-8 numbers above
-are single-vintage; the six superseded fold-5 runs are preserved under
-`runs_archive/vintage_358days/` with the full explanation. Folds 1–4 have fixed
-`test_end` dates and are vintage-independent.
+### What augmentation actually does
+
+Against the benchmark, per fold, using each cell's own standard error:
+
+| fold | benchmark | baseline gap (t) | bootstrap gap (t) |
+|---|---|---|---|
+| 1 (2021) | 2.225 | −0.168 (**−4.22**) | −0.109 (−1.59) |
+| 2 (2022 bear) | −0.436 | −0.220 (**−4.18**) | −0.074 (−1.61) |
+| 3 (2023) | 1.140 | +0.058 (1.70) | +0.005 (0.10) |
+| 4 (2024) | 1.404 | +0.005 (0.12) | +0.014 (0.27) |
+| 5 (2025+) | 1.344 | −0.094 (**−2.90**) | −0.050 (−1.14) |
+
+This is the clearest statement of the result: **the un-augmented baseline is
+significantly worse than equal-weight on 3 of 5 folds; the augmented cell is
+not significantly worse on any, and not significantly better on any either.**
+Block-bootstrap augmentation does not make the agent beat the benchmark — it
+makes the agent statistically indistinguishable from it. After eight rounds,
+"ties with buy-and-hold" is the ceiling reached so far.
+
+The one fold-level effect that is real (bear fold, +0.146, t = 2.10) is also the
+one where the benchmark itself loses money, i.e. augmentation helps most in a
+sustained drawdown. That is consistent with what the method does: resampled
+blocks give the policy more examples of falling markets than the 1–4 years of
+real training history contain.
+
+### The methodological lesson
+
+Three seeds cannot resolve the effects this project is chasing. Fold-level seed
+standard deviations run 0.10–0.25, so a 3-seed mean carries a standard error of
+roughly 0.06–0.14 — larger than every margin ever claimed here. At 10 seeds the
+standard error falls to 0.03–0.07, which is what made round 8 decisive in either
+direction. **No future claim in this project should rest on fewer than 10
+seeds**, and differences should be reported with `scripts/compare_cells.py`
+rather than by comparing a mean to a spread by eye.
+
+### Vintage note
+
+Fold 5 is the only fold whose test window runs to the end of available data, so
+its length tracks the data vintage: 358 days on the cache round 4 used, 363 on
+the current one, which moves the equal-weight benchmark by 0.066 — larger than
+most margins here. All round-8 numbers are single-vintage; the six superseded
+fold-5 runs are preserved under `runs_archive/vintage_358days/`. Folds 1–4 have
+fixed `test_end` dates and are vintage-independent.
 
 ### Round 8 addendum — the policy stays near equal weight by choice
 

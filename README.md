@@ -16,7 +16,7 @@ just be a faster way to lose money.
 
 ## Headline finding
 
-Across **8 rounds of experiments and ~175 trained models**, covering reward
+Across **8 rounds of experiments and ~240 trained models**, covering reward
 shaping, encoder architecture, PPO convergence, data augmentation, wider
 macro context, and four different tradeable baskets:
 
@@ -26,12 +26,19 @@ macro context, and four different tradeable baskets:
 > inside one seed's noise.
 
 The one lever that has survived scrutiny is **block-bootstrap data
-augmentation**. Tested across all 5 folds in round 8, it cuts the mean gap to
-benchmark from −0.089 to **−0.016**, and beats the benchmark on 3 of 5 folds
-where the un-augmented baseline manages 1. But no individual fold's margin
-exceeds its own seed spread, and augmentation *widens* that spread wherever it
-helps — so the honest verdict is a real effect of unproven size. Settling it
-needs seeds, not another lever; see [`scripts/adroit/`](scripts/adroit/).
+augmentation**, and round 8 measured exactly what it is worth: 100 runs, 10
+seeds × 5 folds × 2 cells. It does **not** beat the benchmark anywhere. What it
+does is close the gap to a statistical tie — the un-augmented baseline is
+significantly *worse* than equal-weight on 3 of 5 folds (t = −4.2, −4.2, −2.9),
+while the augmented cell is not significantly worse on any fold, nor better on
+any. Its one real fold-level effect is on the 2022 bear market (+0.146,
+t = 2.10), where resampled blocks give the policy more falling-market history
+than the real 1–4 years contain.
+
+Round 8 also killed the earlier 3-seed result it was testing: the bear-fold
+"crossing" of −0.423 vs −0.436 became **−0.510** at 10 seeds. Every crossing
+found before round 8 was a small-sample artifact — see
+[the methodological lesson](RESULTS.md#round-8).
 
 Why this negative result is worth reading: the interesting part isn't that the
 agent loses, it's *why* every obvious fix fails to help. See
@@ -70,10 +77,12 @@ FRED macro series ─────┘    (88 cols)        (walk-forward,         
 
 ## Results
 
-All numbers are **test-split Sharpe, mean over 3 seeds**, from the JSON in
-`runs_rolling/` and `runs_bootstrap/`. Folds are expanding-window
-walk-forward; see [NOTES.md](NOTES.md#fold-naming) for the fold table and a
-naming quirk worth knowing before you read directory names.
+All numbers are **test-split Sharpe**, from the JSON in `runs_rolling/` and
+`runs_bootstrap/` — mean over 3 seeds except round 8, which is 10. Folds are
+expanding-window walk-forward; see [NOTES.md](NOTES.md#fold-naming) for the
+fold table and a naming quirk worth knowing before you read directory names.
+**Treat any 3-seed margin below ~0.15 as unresolved** — round 8 showed why
+([lesson](RESULTS.md#round-8)).
 
 ### Main sweep: reward shaping × encoder (13-asset basket, all 5 folds)
 
@@ -100,22 +109,34 @@ seed variance, so attention stays the default.
 | `_longtrain` (200k→600k steps) | −0.582 | 1.308 | converges, doesn't help |
 | `_lowlr` (lr 3e-4→1e-4) | −0.564 | 1.351 | best single lever |
 | `_widectx` (+6 FRED series, +6 observed ETFs) | −0.652 | 1.296 | real, modest lift |
-| `_lowlr` + **block bootstrap** | **−0.423** ✅ | 1.319 | extended to all folds in round 8 |
+| `_lowlr` + **block bootstrap** | ~~−0.423~~ | ~~1.319~~ | superseded — 10 seeds give −0.510 / 1.293, see round 8 |
 
-### Round 8: bootstrap augmentation across all 5 folds (3 seeds, single vintage)
+### Round 8: bootstrap augmentation, 10 seeds × 5 folds (100 runs)
 
-| fold (test year) | baseline `_lowlr` | + bootstrap | benchmark | baseline gap | bootstrap gap |
+| fold (test year) | baseline `_lowlr` | + bootstrap | difference | t | verdict |
 |---|---|---|---|---|---|
-| 1 (2021) | 2.001 | 2.134 | 2.225 | −0.223 | −0.091 |
-| 2 (2022 bear) | −0.564 | **−0.423** | −0.436 | −0.128 | **+0.013** ✅ |
-| 3 (2023) | **1.181** | 1.151 | 1.140 | **+0.041** ✅ | +0.011 ✅ |
-| 4 (2024) | 1.326 | **1.525** | 1.404 | −0.078 | **+0.120** ✅ |
-| 5 (2025+) | 1.289 | 1.211 | 1.344 | −0.055 | −0.132 |
-| **mean gap** | | | | **−0.089** | **−0.016** |
+| 1 (2021) | 2.057 ± 0.126 | 2.116 ± 0.217 | +0.059 | 0.74 | noise |
+| 2 (2022 bear) | −0.656 ± 0.166 | **−0.510** ± 0.144 | **+0.146** | **2.10** | **bootstrap better** |
+| 3 (2023) | 1.198 ± 0.109 | 1.146 ± 0.158 | −0.053 | −0.87 | noise |
+| 4 (2024) | 1.410 ± 0.147 | 1.418 ± 0.161 | +0.008 | 0.12 | noise |
+| 5 (2025+) | 1.250 ± 0.102 | 1.293 ± 0.140 | +0.043 | 0.79 | noise |
 
-Fold 5's benchmark is 1.344 rather than 1.409 here because its test window
-tracks the data vintage — see the vintage note in
-[RESULTS.md](RESULTS.md#round-8).
+And against the benchmark, with each cell's own standard error:
+
+| fold | benchmark | baseline gap (t) | bootstrap gap (t) |
+|---|---|---|---|
+| 1 (2021) | 2.225 | −0.168 (**−4.22**) | −0.109 (−1.59) |
+| 2 (2022 bear) | −0.436 | −0.220 (**−4.18**) | −0.074 (−1.61) |
+| 3 (2023) | 1.140 | +0.058 (1.70) | +0.005 (0.10) |
+| 4 (2024) | 1.404 | +0.005 (0.12) | +0.014 (0.27) |
+| 5 (2025+) | 1.344 | −0.094 (**−2.90**) | −0.050 (−1.14) |
+
+Neither cell beats the benchmark on any fold. Augmentation's contribution is to
+stop losing to it. Fold 5's benchmark is 1.344 rather than 1.409 because its
+test window tracks the data vintage — see [RESULTS.md](RESULTS.md#round-8).
+Reproduce with `python scripts/compare_cells.py attention_frozen_excess_lowlr
+attention_frozen_excess_lowlr_bootstrap --benchmark
+runs_rolling/equal_weight_benchmark_round8.json`.
 
 ### Basket studies — each against *its own* equal-weight benchmark
 
@@ -151,10 +172,13 @@ itself. The model has to do something equal-weight structurally can't.
 
 **Open leads**, in the order they seem worth pursuing:
 
-1. **More seeds on the round-8 design.** All 5 folds are now done at 3 seeds and
-   the effect is real but not sized: fold 4 read +0.188 at 2 seeds and +0.120 at
-   3, against a spread of 0.157. 10 seeds × 5 folds × 2 cells settles it, and as
-   a Slurm array that is one submission — [`scripts/adroit/`](scripts/adroit/).
+1. **Reward scale and exploration.** Round 8's addendum shows the policy barely
+   differentiates, and round 3 showed entropy and policy std nearly static. The
+   excess-return reward is ~1e-4 per day and `ent_coef` is 0, so there may be no
+   gradient large enough to move the Gaussian's mean off its initialization. A
+   sweep over `ent_coef`, a reward scale factor and `vf_coef` tests whether
+   eight rounds of flat results are an optimization artifact. Neither
+   `ent_coef` nor a reward scale has a config key yet.
 2. **The policy barely differentiates, and not because it can't.** The action
    space does impose a cap — `Box(low=-1, high=1)` softmaxed over 14 slots
    confines every weight to **[1.0%, 36.2%]** — but measured against trained

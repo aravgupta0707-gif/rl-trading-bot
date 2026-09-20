@@ -48,14 +48,31 @@ and `TLT` from worst to mid-pack (its collapse was the 2022+ regime, invisible
 pre-2020). A basket picked on the leaky ranking would have looked good for
 reasons that were already in the test set.
 
-### 4. Verify numbers from files on disk
+### 4. Ten seeds minimum, and test differences rather than eyeballing them
+
+Fold-level seed standard deviations in this project run **0.10–0.25 Sharpe**, so
+a 3-seed mean carries a standard error of roughly 0.06–0.14 — larger than every
+margin the project has ever claimed. Round 8 demonstrated the consequence: a
+bear-fold result of −0.423 (beating a −0.436 benchmark) at 3 seeds became
+**−0.510** at 10, because the first three seeds happened to include the two best
+runs of ten.
+
+- **Use at least 10 seeds** for any claim. At 10 the standard error falls to
+  0.03–0.07, enough to resolve the effects here.
+- **Report a t statistic, not a gap.** `scripts/compare_cells.py` does the
+  Welch comparison between two cells and against the benchmark; |t| > 2 is the
+  bar for calling a difference real.
+- A cluster makes this nearly free — 100 runs is minutes of wall clock as a
+  Slurm array (`scripts/adroit/`).
+
+### 5. Verify numbers from files on disk
 
 Read results from `runs*/**/metrics.json`, not from console tails or
 notification text. Interleaved background jobs truncate and interleave output.
 The RSI bug below was caught precisely by cross-checking disk state against
 what a summary appeared to say.
 
-### 5. Long runs must be resumable, never blocking
+### 6. Long runs must be resumable, never blocking
 
 Every runner skips any cell that already has a `metrics.json`, so relaunching
 the same command resumes rather than retrains. Multi-hour rounds go through a
@@ -64,7 +81,7 @@ wrapper that loops until the expected file count exists — see
 This project has a history of long background jobs being killed unpredictably;
 assume it will happen and make it cheap.
 
-### 6. `python`, not `python3`
+### 7. `python`, not `python3`
 
 On the machine this project was developed on, `python3` resolved to a different
 interpreter without `pandas_datareader`. Cost real debugging time once.
@@ -88,7 +105,7 @@ Expanding train window, 1-year validation, 1-year test. Defined in
 **The `test<year>` in each fold name is the validation year, not the test
 year.** The actual test window is the year after the name suggests — so
 `fold2_test2021`, the fold described everywhere as "the 2022 bear," tests on
-2022. The names are kept as-is because ~145 committed run directories embed
+2022. The names are kept as-is because ~240 committed run directories embed
 them; the tables in [RESULTS.md](RESULTS.md) and [README.md](README.md) label
 folds by their real test year.
 
