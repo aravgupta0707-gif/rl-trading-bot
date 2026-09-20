@@ -36,7 +36,12 @@ mkdir -p slurm_logs
 
 CELLS=(baseline bootstrap)
 FOLDS=(fold1_test2020 fold2_test2021 fold3_test2022 fold4_test2023 fold5_test2024)
-SEEDS=(0 1 2 3 4)
+# Override at submit time; sbatch exports the submitting environment by default.
+# The --array range must match 2 x 5 x len(SEEDS):
+#     SEEDS="0 1 2 3 4"                     -> sbatch --array=0-49  (the default)
+#     SEEDS="0 1 2 3 4 5 6 7 8 9"           -> sbatch --array=0-99
+# shellcheck disable=SC2206
+SEEDS=(${SEEDS:-0 1 2 3 4})
 CONFIG=configs/attention_frozen_excess_lowlr.yaml
 
 n_seeds=${#SEEDS[@]}
